@@ -59,6 +59,8 @@ input:focus, textarea:focus { outline: none; border-color: #6f7d3f !important; }
   [data-r="hero-left"] { padding: 44px 24px 52px !important; }
   [data-r="hero-img"] { border-left: none !important; border-top: 2px solid rgba(236,233,219,0.14) !important; padding: 0 !important; }
   [data-r="about"] { grid-template-columns: 1fr !important; }
+  [data-r="about-text"] { order: 1 !important; }
+  [data-r="about-img"] { order: 2 !important; }
   [data-r="about-img"] { border-right: none !important; border-bottom: 2px solid rgba(236,233,219,0.14) !important; min-height: 340px !important; }
   [data-r="about-text"] { padding: 44px 24px !important; }
   [data-r="menu"] { padding: 48px 24px !important; }
