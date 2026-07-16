@@ -1,0 +1,21 @@
+Galerija — dodavanje fotografija
+================================
+
+Ubacite slike jela u ovaj folder (assets/galerija/) sa TAČNO ovim imenima
+i one će se automatski prikazati na stranici galerija.html:
+
+  sarma.jpg   → Sarma
+  pasulj.jpg   → Pasulj sa rebrima
+  musaka.jpg   → Musaka
+  punjene-paprike.jpg   → Punjene paprike
+  becka-snicla.jpg   → Bečka šnicla
+  cevapi.jpg   → Ćevapi
+  mesano-meso.jpg   → Mešano meso
+  njoke.jpg   → Njoke četiri sira
+  rizoto.jpg   → Rižoto sa pečurkama
+  sopska-salata.jpg   → Šopska salata
+  palacinke.jpg   → Palačinke
+  baklava.jpg   → Baklava
+
+Format: .jpg, preporučen odnos 4:3 (npr. 1200×900 px).
+Dok fajl ne postoji, prikazuje se placeholder ikonica.

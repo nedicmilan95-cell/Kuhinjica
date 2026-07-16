@@ -1,0 +1,49 @@
+Meni — dodavanje fotografija jela
+=================================
+
+Ubacite sliku u folder assets/meni/ sa TAČNO ovim imenom (.jpg) i pojaviće se
+kao sličica pored jela. Dok fajl ne postoji, prikazuje se ikonica.
+
+  kajgana-sa-slaninom.jpg   → Kajgana sa slaninom
+  omlet-sa-slaninom.jpg   → Omlet sa slaninom
+  omlet-sa-povrcem.jpg   → Omlet sa povrćem
+  govedja-supa-sa-rezancima.jpg   → Goveđa supa sa rezancima
+  pileca-supa.jpg   → Pileća supa
+  krem-supa-od-pecurki.jpg   → Krem supa od pečurki
+  sarma-sa-domacim-kupusom.jpg   → Sarma sa domaćim kupusom
+  pasulj-sa-rebrima.jpg   → Pasulj sa rebrima
+  musaka-od-krompira.jpg   → Musaka od krompira
+  punjene-paprike.jpg   → Punjene paprike
+  becka-snicla.jpg   → Bečka šnicla
+  pohovani-sir.jpg   → Pohovani sir
+  pileci-medaljoni.jpg   → Pileći medaljoni
+  kuhinjica-sendvic.jpg   → Kuhinjica sendvič
+  pileci-sendvic.jpg   → Pileći sendvič
+  vegetarijanski.jpg   → Vegetarijanski
+  mesano-meso.jpg   → Mešano meso
+  cevapi-10-kom.jpg   → Ćevapi (10 kom)
+  vesalica.jpg   → Vešalica
+  njoke-cetiri-sira.jpg   → Njoke četiri sira
+  rizoto-sa-pecurkama.jpg   → Rižoto sa pečurkama
+  pasta-carbonara.jpg   → Pasta carbonara
+  tortilja-sa-piletinom.jpg   → Tortilja sa piletinom
+  tortilja-sa-junetinom.jpg   → Tortilja sa junetinom
+  vegetarijanska-tortilja.jpg   → Vegetarijanska tortilja
+  blitva-sa-krompirom.jpg   → Blitva sa krompirom
+  grilovano-povrce.jpg   → Grilovano povrće
+  domaci-pomfrit.jpg   → Domaći pomfrit
+  sopska-salata.jpg   → Šopska salata
+  cezar-salata.jpg   → Cezar salata
+  obrok-salata-sa-piletinom.jpg   → Obrok salata sa piletinom
+  domaci-tartar-sos.jpg   → Domaći tartar sos
+  ajvar.jpg   → Ajvar
+  kajmak.jpg   → Kajmak
+  baklava.jpg   → Baklava
+  palacinke-2-kom.jpg   → Palačinke (2 kom)
+  krempita.jpg   → Krempita
+  domaci-hleb.jpg   → Domaći hleb
+  pogaca.jpg   → Pogača
+  lepinja.jpg   → Lepinja
+  domaci-sok-od-zove.jpg   → Domaći sok od zove
+  limunada.jpg   → Limunada
+  cedjena-pomorandza.jpg   → Ceđena pomorandža
