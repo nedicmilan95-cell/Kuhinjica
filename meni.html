@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meni — Kuhinjica</title>
+<meta name="description" content="Kompletan meni restorana Kuhinjica po kategorijama — sastojci i alergeni za svako jelo.">
+<link rel="icon" href="assets/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="styles.css">
+<style>
+.mthumb { position:relative; flex:0 0 78px; width:78px; height:78px; border-radius:10px; overflow:hidden; cursor:pointer; }
+.mthumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.mthumb.ph { display:flex; align-items:center; justify-content:center; background:#22241a; color:#6f7d3f; }
+.mthumb .mthumb-add { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .15s; background:rgba(20,21,14,0.55); color:#e9c24a; font-size:24px; font-weight:800; z-index:2; }
+.mthumb:hover .mthumb-add { opacity:1; }
+.add-cart { margin-top:8px; align-self:flex-end; display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; background:none; border:2px solid #6f7d3f; color:#94a459; border-radius:50%; cursor:pointer; transition:background .15s, color .15s, transform .15s; }
+.add-cart:hover { background:#6f7d3f; color:#14150e; }
+.add-cart.added { background:#6f7d3f; color:#14150e; transform:scale(1.1); }
+#cart-badge { position:absolute; top:-8px; right:-8px; min-width:20px; height:20px; padding:0 5px; display:none; align-items:center; justify-content:center; background:#ec3013; color:#fff; font-size:11px; font-weight:800; border-radius:10px; line-height:1; }
+#cart-badge.show { display:flex; }
+#cart-backdrop { position:fixed; inset:0; z-index:200; background:rgba(8,8,6,0.6); opacity:0; pointer-events:none; transition:opacity .25s; backdrop-filter:blur(2px); }
+#cart-backdrop.open { opacity:1; pointer-events:auto; }
+#cart-panel { position:fixed; top:0; right:0; z-index:201; width:420px; max-width:92vw; height:100%; background:#14150e; border-left:2px solid rgba(236,233,219,0.16); transform:translateX(100%); transition:transform .3s ease; display:flex; flex-direction:column; font-family:'Archivo',sans-serif; }
+#cart-panel.open { transform:translateX(0); }
+.cart-head { display:flex; align-items:center; justify-content:space-between; padding:24px 24px 18px; border-bottom:2px solid rgba(236,233,219,0.14); }
+.cart-head h3 { margin:0; font-size:22px; font-weight:900; letter-spacing:-0.01em; color:#ece9db; }
+.cart-close { background:none; border:none; color:#cfccbb; cursor:pointer; padding:4px; line-height:0; }
+.cart-close:hover { color:#e9c24a; }
+.cart-items { flex:1; overflow-y:auto; padding:18px 24px; }
+.cart-empty { color:#9b9a86; font-size:15px; text-align:center; padding:48px 12px; line-height:1.6; }
+.citem { display:flex; align-items:flex-start; gap:12px; padding:14px 0; border-bottom:1px solid rgba(236,233,219,0.1); }
+.citem-name { font-weight:700; font-size:15px; color:#ece9db; }
+.citem-unit { font-size:12px; color:#9b9a86; margin-top:2px; }
+.citem-right { margin-left:auto; text-align:right; }
+.citem-sum { font-weight:800; font-size:15px; color:#e9c24a; white-space:nowrap; }
+.qty { display:inline-flex; align-items:center; margin-top:8px; border:2px solid rgba(236,233,219,0.2); border-radius:8px; overflow:hidden; }
+.qty button { width:28px; height:28px; background:#1b1c13; border:none; color:#ece9db; font-size:16px; font-weight:800; cursor:pointer; font-family:inherit; }
+.qty button:hover { background:#6f7d3f; color:#14150e; }
+.qty span { min-width:30px; text-align:center; font-weight:700; font-size:14px; color:#ece9db; }
+.cart-foot { border-top:2px solid rgba(236,233,219,0.14); padding:20px 24px 24px; }
+.cart-total { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px; }
+.cart-total .lbl { font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#9b9a86; font-weight:700; }
+.cart-total .val { font-size:26px; font-weight:900; color:#e9c24a; }
+.cart-foot input, .cart-foot textarea { width:100%; background:#100f0b; border:2px solid rgba(236,233,219,0.2); color:#ece9db; padding:12px 13px; font-family:inherit; font-size:15px; margin-bottom:12px; }
+.cart-foot textarea { resize:vertical; }
+.cart-order { width:100%; background:#e9c24a; color:#14150e; font-weight:800; font-size:15px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-family:inherit; }
+.cart-order:hover { background:#f0cf6b; }
+.cart-ok { text-align:center; padding:30px 12px; }
+.cart-ok .big { font-size:46px; margin-bottom:12px; }
+.cart-ok h4 { margin:0 0 8px; font-size:20px; font-weight:900; color:#94a459; }
+.cart-ok p { margin:0; color:#b9b6a5; font-size:14px; line-height:1.6; }
+@media (max-width:900px) { #cart-panel { width:100%; } }
+@media (max-width:760px){ [data-r="meni-list"]{ columns:1 !important; } }
+</style>
+</head>
+<body>
+<div style="font-family:'Archivo',sans-serif;background:#14150e;color:#ece9db;min-height:100vh;">
+
+  <nav data-r="nav" style="position:sticky;top:0;z-index:150;background:#14150e;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;padding:26px 56px;border-bottom:2px solid rgba(236,233,219,0.14);">
+    <a href="index.html" style="display:flex;align-items:center;gap:14px;">
+      <img src="assets/logo.jpg" alt="Kuhinjica logo" style="width:48px;height:48px;border-radius:50%;object-fit:cover;display:block;">
+      <span style="font-size:12px;letter-spacing:0.22em;color:#94a459;text-transform:uppercase;font-weight:600;">kuhinjica</span>
+    </a>
+    <div data-r="nav-links" style="display:flex;gap:28px;font-size:14px;font-weight:600;letter-spacing:0.02em;color:#cfccbb;white-space:nowrap;justify-content:center;">
+      <a href="index.html#a-about">O nama</a><a href="meni.html" style="color:#e9c24a;">Meni</a><a href="index.html#a-rec">Recenzije</a><a href="galerija.html">Galerija</a><a href="index.html#a-kontakt">Kontakt</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;justify-self:end;">
+      <a href="#" id="cart-btn" title="Korpa" aria-label="Korpa za poručivanje" style="display:inline-flex;align-items:center;justify-content:center;background:#e9c24a;color:#14150e;padding:11px 16px;border-radius:8px;position:relative;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg></a>
+      <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;border:2px solid rgba(236,233,219,0.3);color:#ece9db;font-weight:700;font-size:14px;padding:10px 18px;border-radius:8px;white-space:nowrap;">← Početna</a>
+      <button data-r="burger" id="burger" type="button" aria-label="Meni" style="display:none;align-items:center;justify-content:center;width:46px;height:46px;background:none;border:2px solid rgba(236,233,219,0.3);color:#ece9db;border-radius:8px;cursor:pointer;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></button>
+    </div>
+  </nav>
+  <div data-r="drawer" id="drawer" data-open="0" style="display:none;position:sticky;top:0;z-index:149;border-bottom:2px solid rgba(236,233,219,0.14);background:#14150e;">
+    <div style="display:flex;flex-direction:column;padding:6px 24px 18px;font-size:16px;font-weight:600;color:#cfccbb;">
+      <a href="index.html#a-about" style="padding:15px 0;border-bottom:1px solid rgba(236,233,219,0.1);">O nama</a>
+      <a href="meni.html" style="padding:15px 0;border-bottom:1px solid rgba(236,233,219,0.1);color:#e9c24a;">Meni</a>
+      <a href="index.html#a-rec" style="padding:15px 0;border-bottom:1px solid rgba(236,233,219,0.1);">Recenzije</a>
+      <a href="galerija.html" style="padding:15px 0;border-bottom:1px solid rgba(236,233,219,0.1);">Galerija</a>
+      <a href="index.html#a-kontakt" style="padding:15px 0;">Kontakt</a>
+    </div>
+  </div>
+
+  <section data-r="header" style="padding:66px 56px 46px;border-bottom:2px solid rgba(236,233,219,0.14);">
+    <div style="font-size:12px;letter-spacing:0.28em;color:#94a459;text-transform:uppercase;font-weight:700;margin-bottom:22px;">Naš meni</div>
+    <h1 style="font-size:clamp(40px,8vw,76px);line-height:0.98;font-weight:900;letter-spacing:-0.03em;margin:0 0 24px;">Kompletna<br>ponuda jela</h1>
+    <p style="font-size:18px;line-height:1.6;color:#b9b6a5;max-width:620px;margin:0;">Sva jela po kategorijama, sa sastojcima i oznakom alergena. Kliknite <strong style="color:#e9c24a;">+</strong> da dodate jelo u korpu, a sličicu da dodate fotografiju. Ako imate posebne potrebe u ishrani, obavestite nas prilikom porudžbine.</p>
+  </section>
+
+  <div data-r="meni-wrap" style="padding:52px 56px 90px;display:flex;flex-direction:column;gap:44px;">
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Doručak</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/kajgana-sa-slaninom.jpg" alt="Kajgana sa slaninom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Kajgana sa slaninom</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">480 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">3 jaja, domaća dimljena slanina, domaći hleb</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Jaja, Gluten</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/omlet-sa-slaninom.jpg" alt="Omlet sa slaninom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Omlet sa slaninom</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">480 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">3 jaja, slanina, paradajz, domaći hleb</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Jaja, Gluten</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/omlet-sa-povrcem.jpg" alt="Omlet sa povrćem" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Omlet sa povrćem</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">450 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">3 jaja, paprika, pečurke, sir</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Jaja, Mleko</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Supa dana</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/govedja-supa-sa-rezancima.jpg" alt="Goveđa supa sa rezancima" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Goveđa supa sa rezancima</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">320 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">goveđe meso, domaći rezanci, koren, šargarepa</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Jaja, Celer</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pileca-supa.jpg" alt="Pileća supa" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Pileća supa</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">300 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">pileće belo meso, koren, šargarepa, peršun</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Celer</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/krem-supa-od-pecurki.jpg" alt="Krem supa od pečurki" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Krem supa od pečurki</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">360 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">šampinjoni, pavlaka, krutoni, začini</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Mleko, Gluten</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Kuvana jela</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">4 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/sarma-sa-domacim-kupusom.jpg" alt="Sarma sa domaćim kupusom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Sarma sa domaćim kupusom</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">690 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">kiseli kupus, mleveno meso, pirinač, dimljeno rebro</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pasulj-sa-rebrima.jpg" alt="Pasulj sa rebrima" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Pasulj sa rebrima</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">620 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">beli pasulj, dimljena rebra, luk, začini</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/musaka-od-krompira.jpg" alt="Musaka od krompira" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Musaka od krompira</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">650 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">krompir, mleveno meso, jaja, pavlaka</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Jaja, Mleko</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/punjene-paprike.jpg" alt="Punjene paprike" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Punjene paprike</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">660 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">paprika, mleveno meso, pirinač, paradajz sos</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Pohovano</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/becka-snicla.jpg" alt="Bečka šnicla" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Bečka šnicla</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">780 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">180g svinjski but, jaja, prezle, prilog po izboru</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Jaja</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pohovani-sir.jpg" alt="Pohovani sir" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Pohovani sir</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">590 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">150g gauda, jaja, prezle, tartar sos</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Jaja, Mleko</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pileci-medaljoni.jpg" alt="Pileći medaljoni" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Pileći medaljoni</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">720 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">160g pileće belo, jaja, prezle</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Jaja</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Sendviči</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/kuhinjica-sendvic.jpg" alt="Kuhinjica sendvič" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Kuhinjica sendvič</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">560 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">lepinja, pljeskavica, kajmak, ajvar, salata</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Mleko</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pileci-sendvic.jpg" alt="Pileći sendvič" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Pileći sendvič</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">540 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">lepinja, grilovano pile, sir, sos</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Mleko</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/vegetarijanski-sendvic.jpg" alt="Vegetarijanski sendvič" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Vegetarijanski sendvič</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">480 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">lepinja, grilovano povrće, sir, namaz</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Mleko</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Meso sa roštilja</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/mesano-meso.jpg" alt="Mešano meso" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Mešano meso</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">990 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">ćevapi, vešalica, pileći batak, kobasica</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/cevapi-10-kom.jpg" alt="Ćevapi (10 kom)" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Ćevapi (10 kom)</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">640 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">junetina, lepinja, crni luk, kajmak</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Mleko</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/vesalica.jpg" alt="Vešalica" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Vešalica</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">820 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">200g svinjski vrat, prilog po izboru</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Paste, njoke i rižota</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/njoke-cetiri-sira.jpg" alt="Njoke četiri sira" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Njoke četiri sira</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">690 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">njoke, gorgonzola, parmezan, gauda, edamer</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Mleko</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/rizoto-sa-pecurkama.jpg" alt="Rižoto sa pečurkama" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Rižoto sa pečurkama</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">640 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">arborio pirinač, šampinjoni, parmezan, pavlaka</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Mleko</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pasta-carbonara.jpg" alt="Pasta carbonara" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Pasta carbonara</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">660 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">pasta, pančeta, jaje, parmezan, biber</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Jaja, Mleko</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Tortilje</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/tortilja-sa-piletinom.jpg" alt="Tortilja sa piletinom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Tortilja sa piletinom</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">590 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">tortilja, grilovano pile, povrće, sos</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Mleko</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/tortilja-sa-junetinom.jpg" alt="Tortilja sa junetinom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Tortilja sa junetinom</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">640 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">tortilja, junetina, kukuruz, salata</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/vegetarijanska-tortilja.jpg" alt="Vegetarijanska tortilja" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Vegetarijanska tortilja</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">540 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">tortilja, povrće, pasulj, sir</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Mleko</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Variva i prilozi</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/blitva-sa-krompirom.jpg" alt="Blitva sa krompirom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Blitva sa krompirom</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">380 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">sveža blitva, krompir, beli luk, maslinovo ulje</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/grilovano-povrce.jpg" alt="Grilovano povrće" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Grilovano povrće</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">420 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">tikvice, paprika, patlidžan, začini</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/domaci-pomfrit.jpg" alt="Domaći pomfrit" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Domaći pomfrit</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">300 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">sveže sečen krompir</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Salate i obrok salate</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/sopska-salata.jpg" alt="Šopska salata" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Šopska salata</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">360 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">paradajz, krastavac, paprika, sir</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Mleko</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/cezar-salata.jpg" alt="Cezar salata" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Cezar salata</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">590 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">zelena salata, pile, krutoni, parmezan, cezar sos</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Jaja, Mleko, Riba</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/obrok-salata-sa-piletinom.jpg" alt="Obrok salata sa piletinom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Obrok salata sa piletinom</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">620 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">mix salata, pile, jaje, seme, dresing</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Jaja, Senf</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Sosevi i dodaci</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/domaci-tartar-sos.jpg" alt="Domaći tartar sos" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Domaći tartar sos</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">120 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">majonez, kiseli krastavci, začini</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Jaja, Senf</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/ajvar.jpg" alt="Ajvar" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Ajvar</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">150 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">pečena paprika, ulje, začini</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/kajmak.jpg" alt="Kajmak" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Kajmak</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">180 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">domaći mladi kajmak</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Mleko</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Kolači</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/baklava.jpg" alt="Baklava" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Baklava</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">320 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">kore, orasi, med, šećerni sirup</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Orašasti plodovi</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/palacinke-2-kom.jpg" alt="Palačinke (2 kom)" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Palačinke (2 kom)</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">340 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">palačinke, nutela / plazma / džem, orasi</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Jaja, Mleko, Orašasti plodovi</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/krempita.jpg" alt="Krempita" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Krempita</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">300 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">lisnato testo, vanila krema</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Jaja, Mleko</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Hleb</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/domaci-hleb.jpg" alt="Domaći hleb" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Domaći hleb</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">90 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">pšenično brašno, kvasac, so</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pogaca.jpg" alt="Pogača" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Pogača</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">120 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">pšenično brašno, susam</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten, Susam</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/lepinja.jpg" alt="Lepinja" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Lepinja</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">80 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">pšenično brašno, sa roštilja</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:rgba(236,48,19,0.12);border:1px solid rgba(236,48,19,0.5);color:#ff7a63;font-size:12px;font-weight:700;letter-spacing:0.02em;padding:6px 11px;border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Alergeni: Gluten</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:16px;padding:0 0 8px;margin-bottom:8px;border-bottom:2px solid rgba(233,194,74,0.35);">
+        <h2 style="font-size:clamp(24px,3.4vw,34px);font-weight:900;letter-spacing:-0.02em;color:#e9c24a;margin:0;">Sokovi</h2>
+        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;">3 jela</span>
+      </div>
+      <div data-r="meni-list" style="columns:2;column-gap:64px;">
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/domaci-sok-od-zove.jpg" alt="Domaći sok od zove" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Domaći sok od zove</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">220 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">prirodni sirup od zove, voda</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/limunada.jpg" alt="Limunada" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Limunada</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">260 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">sveži limun, nana, šećer</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+        <div class="mitem" style="break-inside:avoid;display:flex;gap:16px;align-items:flex-start;padding:22px 0;border-bottom:1px solid rgba(236,233,219,0.1);">
+          <div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/cedjena-pomorandza.jpg" alt="Ceđena pomorandža" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div>
+          <div class="mbody" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div class="mrow" style="display:flex;align-items:baseline;gap:14px;">
+              <span class="mname" style="font-weight:700;font-size:19px;color:#ece9db;">Ceđena pomorandža</span>
+              <span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span>
+              <span class="mprice" style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">320 din</span>
+            </div>
+            <div style="font-size:14px;color:#b9b6a5;margin-top:7px;line-height:1.5;">0.3l sveže ceđena pomorandža</div>
+            <div style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#6f7d3f;font-size:12px;font-weight:700;letter-spacing:0.02em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Bez navedenih alergena</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer data-r="footer" style="padding:56px;display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px;background:#0f100a;border-top:2px solid rgba(236,233,219,0.14);">
+    <div>
+      <img src="assets/logo.jpg" alt="Kuhinjica logo" style="width:60px;height:60px;border-radius:50%;object-fit:cover;display:block;margin-bottom:16px;">
+      <p style="font-size:14px;color:#9b9a86;line-height:1.6;max-width:320px;">Restoran domaće i kuvane hrane. Sveže gotovo jelo svakog dana.</p>
+    </div>
+    <div>
+      <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;margin-bottom:16px;">Stranice</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:#cfccbb;"><a href="meni.html">Meni</a><a href="galerija.html">Galerija</a><a href="index.html#a-kontakt">Kontakt</a></div>
+    </div>
+    <div>
+      <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#6f7d3f;font-weight:700;margin-bottom:16px;">Kontakt</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:#cfccbb;"><span>Lajoša Joa 46, Subotica</span><span>066 166 122</span><span>info@kuhinjica.rs</span></div>
+    </div>
+    <div style="grid-column:1 / -1;border-top:2px solid rgba(236,233,219,0.14);padding-top:22px;font-size:13px;color:#6f6e5f;">© 2026 Kuhinjica · Sva prava zadržana</div>
+  </footer>
+</div>
+<script>
+(function(){ var b=document.getElementById('burger'), d=document.getElementById('drawer'); if(b) b.addEventListener('click', function(){ d.dataset.open = d.dataset.open==='1'?'0':'1'; }); })();
+</script>
+<script>
+(function(){
+  var PREFIX='kuhinjica-meni-';
+  function keyOf(thumb){ var img=thumb.querySelector('img'); if(!img) return null; var m=(img.getAttribute('src')||'').match(/meni\/([^\/]+)\.jpg/); return m?m[1]:null; }
+  var input=document.createElement('input'); input.type='file'; input.accept='image/*'; input.style.display='none'; document.body.appendChild(input);
+  var current=null;
+  document.querySelectorAll('.mthumb').forEach(function(thumb){
+    var key=keyOf(thumb); if(!key) return;
+    var img=thumb.querySelector('img');
+    var saved=null; try{ saved=localStorage.getItem(PREFIX+key); }catch(e){}
+    if(saved){ img.src=saved; img.style.display=''; }
+    var add=document.createElement('div'); add.className='mthumb-add'; add.textContent='+'; add.title='Dodaj fotografiju'; thumb.appendChild(add);
+    thumb.addEventListener('click', function(){ current={img:img,key:key}; input.value=''; input.click(); });
+  });
+  input.addEventListener('change', function(){ if(!current||!input.files||!input.files[0]) return; var r=new FileReader(); r.onload=function(){ try{ localStorage.setItem(PREFIX+current.key, r.result); }catch(e){ alert('Slika je prevelika za čuvanje u browseru.'); } current.img.src=r.result; current.img.style.display=''; }; r.readAsDataURL(input.files[0]); });
+})();
+</script>
+<script>
+(function(){
+  var KEY='kuhinjica-korpa';
+  var WEB3FORMS_KEY='PASTE-ACCESS-KEY-OVDE';
+  var cart={};
+  try{ cart=JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ cart={}; }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(cart)); }catch(e){} }
+  function priceNum(s){ var m=(s||'').replace(/\./g,'').match(/\d+/); return m?parseInt(m[0],10):0; }
+  function fmt(n){ return n.toLocaleString('sr-RS')+' din'; }
+  var bd=document.createElement('div'); bd.id='cart-backdrop';
+  var panel=document.createElement('div'); panel.id='cart-panel';
+  panel.innerHTML='<div class="cart-head"><h3>Vaša korpa</h3><button class="cart-close" aria-label="Zatvori"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div><div class="cart-items" id="cart-items"></div><div class="cart-foot" id="cart-foot"></div>';
+  document.body.appendChild(bd); document.body.appendChild(panel);
+  var itemsEl=panel.querySelector('#cart-items'), footEl=panel.querySelector('#cart-foot');
+  function count(){ var c=0; for(var k in cart) c+=cart[k].qty; return c; }
+  function total(){ var t=0; for(var k in cart) t+=cart[k].qty*cart[k].price; return t; }
+  function open(){ bd.classList.add('open'); panel.classList.add('open'); document.body.style.overflow='hidden'; render(); }
+  function close(){ bd.classList.remove('open'); panel.classList.remove('open'); document.body.style.overflow=''; }
+  bd.addEventListener('click', close);
+  panel.querySelector('.cart-close').addEventListener('click', close);
+  function badge(){ var b=document.getElementById('cart-badge'); if(!b) return; var c=count(); b.textContent=c; b.classList.toggle('show', c>0); }
+  function render(){
+    var keys=Object.keys(cart);
+    if(!keys.length){ itemsEl.innerHTML='<div class="cart-empty">Vaša korpa je prazna.<br>Dodajte jela iz menija i poručite dostavu.</div>'; footEl.innerHTML=''; return; }
+    itemsEl.innerHTML=keys.map(function(k){ var it=cart[k]; return '<div class="citem" data-k="'+k+'"><div><div class="citem-name">'+it.name+'</div><div class="citem-unit">'+fmt(it.price)+' / kom</div><div class="qty"><button data-act="dec">−</button><span>'+it.qty+'</span><button data-act="inc">+</button></div></div><div class="citem-right"><div class="citem-sum">'+fmt(it.price*it.qty)+'</div></div></div>'; }).join('');
+    footEl.innerHTML='<div class="cart-total"><span class="lbl">Ukupno</span><span class="val">'+fmt(total())+'</span></div><form id="cart-form"><input required name="ime" placeholder="Ime i prezime"><input required name="tel" placeholder="Telefon"><input required type="email" name="email" placeholder="Vaš e-mail (za potvrdu)"><textarea required name="adr" rows="2" placeholder="Adresa za dostavu"></textarea><button type="submit" class="cart-order">Poruči — '+fmt(total())+'</button></form>';
+    var form=footEl.querySelector('#cart-form');
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var btn=form.querySelector('.cart-order');
+      var lines=Object.keys(cart).map(function(k){ var it=cart[k]; return it.qty+' x '+it.name+' — '+fmt(it.price*it.qty); }).join('\n');
+      var msg='NOVA PORUDŽBINA — Kuhinjica\n\nKupac: '+form.ime.value+'\nTelefon: '+form.tel.value+'\nE-mail: '+form.email.value+'\nAdresa za dostavu: '+form.adr.value+'\n\nStavke:\n'+lines+'\n\nUKUPNO: '+fmt(total());
+      btn.disabled=true; btn.textContent='Slanje...';
+      fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:WEB3FORMS_KEY,subject:'Nova porudžbina — Kuhinjica',from_name:'Kuhinjica — online porudžbina',name:form.ime.value,email:form.email.value,replyto:form.email.value,message:msg})})
+      .then(function(r){return r.json();})
+      .then(function(res){ if(!res.success){ throw new Error('fail'); } cart={}; save(); badge(); itemsEl.innerHTML='<div class="cart-ok"><div class="big">✓</div><h4>Porudžbina poslata!</h4><p>Potvrdu smo poslali na vaš e-mail. Restoran je obavešten i uskoro vas zovemo radi potvrde dostave.</p></div>'; footEl.innerHTML=''; })
+      .catch(function(){ btn.disabled=false; btn.textContent='Pokušaj ponovo'; alert('Slanje nije uspelo. Proverite internet ili nas pozovite: 066 166 122'); });
+    });
+  }
+  itemsEl.addEventListener('click', function(e){ var btn=e.target.closest('button[data-act]'); if(!btn) return; var row=e.target.closest('.citem'); var k=row.dataset.k; if(!cart[k]) return; if(btn.dataset.act==='inc') cart[k].qty++; else { cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; } save(); badge(); render(); });
+  document.querySelectorAll('.mitem').forEach(function(item){
+    var nameEl=item.querySelector('.mname'), priceEl=item.querySelector('.mprice'); if(!nameEl||!priceEl) return;
+    var name=nameEl.textContent.trim(), price=priceNum(priceEl.textContent), key=name.toLowerCase();
+    var btn=document.createElement('button'); btn.type='button'; btn.className='add-cart'; btn.title='Dodaj u korpu'; btn.setAttribute('aria-label','Dodaj u korpu');
+    btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>';
+    btn.addEventListener('click', function(){ if(!cart[key]) cart[key]={name:name,price:price,qty:0}; cart[key].qty++; save(); badge(); btn.classList.add('added'); setTimeout(function(){ btn.classList.remove('added'); },700); });
+    item.querySelector('.mbody').appendChild(btn);
+  });
+  var cartBtn=document.getElementById('cart-btn');
+  if(cartBtn){ var badgeEl=document.createElement('span'); badgeEl.id='cart-badge'; cartBtn.appendChild(badgeEl); cartBtn.addEventListener('click', function(e){ e.preventDefault(); open(); }); }
+  badge();
+})();
+</script>
+</body>
+</html>

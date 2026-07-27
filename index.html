@@ -10,6 +10,48 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="styles.css">
 <style>
+/* korpa */
+.mbody { position: relative; display: flex; flex-direction: column; }
+.add-cart { margin-top: 8px; align-self: flex-end; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: none; border: 2px solid #6f7d3f; color: #94a459; border-radius: 50%; cursor: pointer; transition: background .15s, color .15s, transform .15s; }
+.add-cart:hover { background: #6f7d3f; color: #14150e; }
+.add-cart.added { background: #6f7d3f; color: #14150e; transform: scale(1.1); }
+#cart-badge { position: absolute; top: -8px; right: -8px; min-width: 20px; height: 20px; padding: 0 5px; display: none; align-items: center; justify-content: center; background: #ec3013; color: #fff; font-size: 11px; font-weight: 800; border-radius: 10px; line-height: 1; }
+#cart-badge.show { display: flex; }
+#cart-backdrop { position: fixed; inset: 0; z-index: 200; background: rgba(8,8,6,0.6); opacity: 0; pointer-events: none; transition: opacity .25s; backdrop-filter: blur(2px); }
+#cart-backdrop.open { opacity: 1; pointer-events: auto; }
+#cart-panel { position: fixed; top: 0; right: 0; z-index: 201; width: 420px; max-width: 92vw; height: 100%; background: #14150e; border-left: 2px solid rgba(236,233,219,0.16); transform: translateX(100%); transition: transform .3s ease; display: flex; flex-direction: column; font-family: 'Archivo', sans-serif; }
+#cart-panel.open { transform: translateX(0); }
+.cart-head { display: flex; align-items: center; justify-content: space-between; padding: 24px 24px 18px; border-bottom: 2px solid rgba(236,233,219,0.14); }
+.cart-head h3 { margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.01em; color: #ece9db; }
+.cart-close { background: none; border: none; color: #cfccbb; cursor: pointer; padding: 4px; line-height: 0; }
+.cart-close:hover { color: #e9c24a; }
+.cart-items { flex: 1; overflow-y: auto; padding: 18px 24px; }
+.cart-empty { color: #9b9a86; font-size: 15px; text-align: center; padding: 48px 12px; line-height: 1.6; }
+.citem { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(236,233,219,0.1); }
+.citem-name { font-weight: 700; font-size: 15px; color: #ece9db; }
+.citem-unit { font-size: 12px; color: #9b9a86; margin-top: 2px; }
+.citem-right { margin-left: auto; text-align: right; }
+.citem-sum { font-weight: 800; font-size: 15px; color: #e9c24a; white-space: nowrap; }
+.qty { display: inline-flex; align-items: center; gap: 0; margin-top: 8px; border: 2px solid rgba(236,233,219,0.2); border-radius: 8px; overflow: hidden; }
+.qty button { width: 28px; height: 28px; background: #1b1c13; border: none; color: #ece9db; font-size: 16px; font-weight: 800; cursor: pointer; font-family: inherit; }
+.qty button:hover { background: #6f7d3f; color: #14150e; }
+.qty span { min-width: 30px; text-align: center; font-weight: 700; font-size: 14px; color: #ece9db; }
+.cart-foot { border-top: 2px solid rgba(236,233,219,0.14); padding: 20px 24px 24px; }
+.cart-total { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; }
+.cart-total .lbl { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9b9a86; font-weight: 700; }
+.cart-total .val { font-size: 26px; font-weight: 900; color: #e9c24a; }
+.cart-foot input, .cart-foot textarea { width: 100%; background: #100f0b; border: 2px solid rgba(236,233,219,0.2); color: #ece9db; padding: 12px 13px; font-family: inherit; font-size: 15px; margin-bottom: 12px; }
+.cart-foot textarea { resize: vertical; }
+.cart-order { width: 100%; background: #e9c24a; color: #14150e; font-weight: 800; font-size: 15px; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; }
+.cart-order:hover { background: #f0cf6b; }
+.cart-order:disabled { opacity: 0.45; cursor: default; }
+.cart-ok { text-align: center; padding: 30px 12px; }
+.cart-ok .big { font-size: 46px; margin-bottom: 12px; }
+.cart-ok h4 { margin: 0 0 8px; font-size: 20px; font-weight: 900; color: #94a459; }
+.cart-ok p { margin: 0; color: #b9b6a5; font-size: 14px; line-height: 1.6; }
+@media (max-width: 900px) { #cart-panel { width: 100%; } }
+</style>
+<style>
 /* menu photo upload */
 .mthumb { cursor: pointer; }
 .mthumb .mthumb-add { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s; background: rgba(20,21,14,0.55); color: #e9c24a; font-size: 24px; font-weight: 800; z-index: 2; }
@@ -17,26 +59,27 @@
 </style>
 </head>
 <body>
-<div style="position:relative;width:100%;max-width:1600px;margin:0 auto;background:#14150e;color:#ece9db;">
+<div style="position:relative;width:100%;background:#14150e;color:#ece9db;">
 
   <!-- NAV -->
-  <nav data-r="nav" style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;padding:44px 56px 26px;border-bottom:2px solid rgba(236,233,219,0.14);">
+  <nav data-r="nav" style="position:sticky;top:0;z-index:150;background:#14150e;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;padding:26px 56px;border-bottom:2px solid rgba(236,233,219,0.14);">
     <a href="index.html" style="display:flex;align-items:center;gap:14px;">
       <img src="assets/logo.jpg" alt="Kuhinjica logo" style="width:48px;height:48px;border-radius:50%;object-fit:cover;display:block;">
       <span style="font-size:12px;letter-spacing:0.22em;color:#94a459;text-transform:uppercase;font-weight:600;">kuhinjica</span>
     </a>
     <div data-r="nav-links" style="display:flex;gap:28px;font-size:14px;font-weight:600;letter-spacing:0.02em;color:#cfccbb;white-space:nowrap;justify-content:center;">
-      <a href="#a-about">O nama</a><a href="#a-meni">Meni</a><a href="#a-rec">Recenzije</a><a href="galerija.html">Galerija</a><a href="#a-kontakt">Kontakt</a>
+      <a href="#a-about">O nama</a><a href="meni.html">Meni</a><a href="#a-rec">Recenzije</a><a href="galerija.html">Galerija</a><a href="#a-kontakt">Kontakt</a>
     </div>
     <div style="display:flex;align-items:center;gap:14px;white-space:nowrap;justify-self:end;">
       <a href="tel:066166122" title="066 166 122" aria-label="Pozovi nas" style="display:inline-flex;align-items:center;justify-content:center;background:#6f7d3f;color:#14150e;padding:11px 16px;border-radius:8px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg></a>
+      <a href="#a-kontakt" id="cart-btn" title="Poruči" aria-label="Korpa za poručivanje" style="display:inline-flex;align-items:center;justify-content:center;background:#e9c24a;color:#14150e;padding:11px 16px;border-radius:8px;position:relative;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg></a>
       <button data-r="burger" id="burger" type="button" aria-label="Meni" style="display:none;align-items:center;justify-content:center;width:46px;height:46px;background:none;border:2px solid rgba(236,233,219,0.3);color:#ece9db;border-radius:8px;cursor:pointer;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></button>
     </div>
   </nav>
-  <div data-r="drawer" id="drawer" data-open="0" style="display:none;border-bottom:2px solid rgba(236,233,219,0.14);background:#14150e;">
+  <div data-r="drawer" id="drawer" data-open="0" style="display:none;position:sticky;top:0;z-index:149;border-bottom:2px solid rgba(236,233,219,0.14);background:#14150e;">
     <div style="display:flex;flex-direction:column;padding:6px 24px 18px;font-size:16px;font-weight:600;color:#cfccbb;">
       <a href="#a-about" style="padding:15px 0;border-bottom:1px solid rgba(236,233,219,0.1);">O nama</a>
-      <a href="#a-meni" style="padding:15px 0;border-bottom:1px solid rgba(236,233,219,0.1);">Meni</a>
+      <a href="meni.html" style="padding:15px 0;border-bottom:1px solid rgba(236,233,219,0.1);">Meni</a>
       <a href="#a-rec" style="padding:15px 0;border-bottom:1px solid rgba(236,233,219,0.1);">Recenzije</a>
       <a href="galerija.html" style="padding:15px 0;border-bottom:1px solid rgba(236,233,219,0.1);">Galerija</a>
       <a href="#a-kontakt" style="padding:15px 0;">Kontakt</a>
@@ -44,23 +87,22 @@
   </div>
 
   <!-- HERO -->
-  <section data-r="hero" style="display:grid;grid-template-columns:1.05fr 0.95fr;border-bottom:2px solid rgba(236,233,219,0.14);">
-    <div data-r="hero-left" style="padding:84px 56px 72px;display:flex;flex-direction:column;justify-content:center;">
+  <section data-r="hero" style="position:relative;min-height:640px;display:flex;align-items:center;border-bottom:2px solid rgba(236,233,219,0.14);overflow:hidden;">
+    <img src="assets/hero.webp" alt="Jelo iz Kuhinjice" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;z-index:0;">
+    <div style="position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(14,15,10,0.92) 0%,rgba(14,15,10,0.78) 42%,rgba(14,15,10,0.45) 100%);"></div>
+    <div data-r="hero-left" style="position:relative;z-index:2;padding:92px 56px;display:flex;flex-direction:column;justify-content:center;width:100%;">
       <div style="font-size:12px;letter-spacing:0.28em;color:#e9c24a;text-transform:uppercase;font-weight:700;margin-bottom:26px;">Restoran domaće i kuvane hrane</div>
-      <h1 style="font-size:clamp(40px,7vw,76px);line-height:0.98;font-weight:900;letter-spacing:-0.03em;margin:0 0 28px;">Kuvano<br>s ljubavlju,<br><span style="color:#94a459;">kao kod kuće.</span></h1>
-      <p style="font-size:18px;line-height:1.6;color:#b9b6a5;max-width:460px;margin:0 0 38px;">Sveže gotovo jelo svakog dana. Recepti koje pamtimo iz kuhinja naših baka — spremljeni polako, od namirnica sa pijace.</p>
+      <h1 style="font-size:clamp(40px,7vw,80px);line-height:0.98;font-weight:900;letter-spacing:-0.03em;margin:0 0 28px;">Kuvano<br>s ljubavlju,<br><span style="color:#94a459;">kao kod kuće.</span></h1>
+      <p style="font-size:18px;line-height:1.6;color:#d8d5c4;max-width:480px;margin:0 0 38px;">Sveže gotovo jelo svakog dana. Recepti koje pamtimo iz kuhinja naših baka — spremljeni polako, od namirnica sa pijace.</p>
       <div style="display:flex;gap:16px;flex-wrap:wrap;">
         <a href="#a-kontakt" style="background:#e9c24a;color:#14150e;font-weight:800;font-size:15px;padding:16px 28px;border-radius:8px;">Poruči online</a>
-        <a href="#a-meni" style="border:2px solid rgba(236,233,219,0.3);color:#ece9db;font-weight:700;font-size:15px;padding:14px 26px;border-radius:8px;">Pogledaj meni</a>
+        <a href="meni.html" style="border:2px solid rgba(236,233,219,0.4);color:#ece9db;font-weight:700;font-size:15px;padding:14px 26px;border-radius:8px;backdrop-filter:blur(3px);">Pogledaj meni</a>
       </div>
-      <div data-r="hero-stats" style="display:flex;gap:46px;margin-top:56px;padding-top:30px;border-top:2px solid rgba(236,233,219,0.14);">
-        <div><div style="font-size:34px;font-weight:900;color:#e9c24a;">30+</div><div style="font-size:12px;letter-spacing:0.12em;color:#9b9a86;text-transform:uppercase;margin-top:4px;">Jela dnevno</div></div>
-        <div><div style="font-size:34px;font-weight:900;color:#e9c24a;">18</div><div style="font-size:12px;letter-spacing:0.12em;color:#9b9a86;text-transform:uppercase;margin-top:4px;">Godina rada</div></div>
-        <div><div style="font-size:34px;font-weight:900;color:#e9c24a;">4.9</div><div style="font-size:12px;letter-spacing:0.12em;color:#9b9a86;text-transform:uppercase;margin-top:4px;">Ocena gostiju</div></div>
+      <div data-r="hero-stats" style="display:flex;gap:46px;margin-top:56px;padding-top:30px;border-top:2px solid rgba(236,233,219,0.2);">
+        <div><div style="font-size:34px;font-weight:900;color:#e9c24a;">30+</div><div style="font-size:12px;letter-spacing:0.12em;color:#cfccbb;text-transform:uppercase;margin-top:4px;">Jela dnevno</div></div>
+        <div><div style="font-size:34px;font-weight:900;color:#e9c24a;">18</div><div style="font-size:12px;letter-spacing:0.12em;color:#cfccbb;text-transform:uppercase;margin-top:4px;">Godina rada</div></div>
+        <div><div style="font-size:34px;font-weight:900;color:#e9c24a;">4.9</div><div style="font-size:12px;letter-spacing:0.12em;color:#cfccbb;text-transform:uppercase;margin-top:4px;">Ocena gostiju</div></div>
       </div>
-    </div>
-    <div data-r="hero-img" style="position:relative;border-left:2px solid rgba(236,233,219,0.14);padding:84px 0 0;">
-      <div style="position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;"><img src="assets/hero.webp" alt="Jelo iz Kuhinjice" style="width:100%;height:100%;object-fit:cover;object-position:50% 50%;display:block;"></div>
     </div>
   </section>
 
@@ -88,105 +130,59 @@
     </div>
   </section>
 
-  <!-- MENI -->
-  <section id="a-meni" data-r="menu" style="padding:76px 56px;border-bottom:2px solid rgba(236,233,219,0.14);">
-    <div data-r="menu-head" style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:44px;">
+  <!-- IZDVAJAMO -->
+  <section id="a-meni" data-r="rec" style="padding:76px 0;border-bottom:2px solid rgba(236,233,219,0.14);background:#16150f;overflow:hidden;">
+    <div data-r="rec-head" style="padding:0 56px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:44px;">
       <div>
-        <div style="font-size:12px;letter-spacing:0.28em;color:#94a459;text-transform:uppercase;font-weight:700;margin-bottom:18px;">Naš meni</div>
-        <h2 style="font-size:clamp(30px,5vw,52px);font-weight:900;letter-spacing:-0.02em;margin:0;">Šta se danas kuva</h2>
+        <div style="font-size:12px;letter-spacing:0.28em;color:#94a459;text-transform:uppercase;font-weight:700;margin-bottom:18px;">Izdvajamo iz današnje ponude</div>
+        <h2 style="font-size:clamp(30px,5vw,52px);font-weight:900;letter-spacing:-0.02em;margin:0;">Predjelo, glavno jelo i desert</h2>
       </div>
-      <div style="font-size:13px;color:#9b9a86;max-width:300px;text-align:right;line-height:1.5;">Pređite mišem preko kategorije — ponuda se prikazuje desno.</div>
+      <a href="meni.html" style="border:2px solid rgba(236,233,219,0.3);color:#ece9db;font-weight:700;font-size:14px;padding:12px 22px;border-radius:8px;white-space:nowrap;">Ceo meni →</a>
     </div>
-    <div data-r="menu-grid" style="display:grid;grid-template-columns:300px minmax(0,1fr);gap:0 56px;align-items:start;">
-      <div data-r="tabs" id="tabs" style="display:flex;flex-direction:column;gap:12px;">
-          <button type="button" class="tab" data-tab="0">Doručak<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="1">Supa dana<span class="arrow"></span></button>
-          <button type="button" class="tab active" data-tab="2">Kuvana jela<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="3">Pohovano<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="4">Sendviči<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="5">Meso sa roštilja<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="6">Paste, njoke i rižota<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="7">Tortilje<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="8">Variva i prilozi<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="9">Salate<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="10">Sosevi i dodaci<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="11">Kolači<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="12">Hleb<span class="arrow"></span></button>
-          <button type="button" class="tab" data-tab="13">Sokovi<span class="arrow"></span></button>
-      </div>
-      <div id="panels">
-        <div class="menu-cols" data-r="menu-cols" data-panel="0" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/kajgana-sa-slaninom.jpg" alt="Kajgana sa slaninom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Kajgana sa slaninom</span><span class="mdots"></span><span class="mprice">480 din</span></div><div class="mdesc">(3 jaja, domaća slanina, hleb)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/omlet-sa-slaninom.jpg" alt="Omlet sa slaninom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Omlet sa slaninom</span><span class="mdots"></span><span class="mprice">480 din</span></div><div class="mdesc">(3 jaja, slanina, paradajz, hleb)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/omlet-sa-povrcem.jpg" alt="Omlet sa povrćem" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Omlet sa povrćem</span><span class="mdots"></span><span class="mprice">450 din</span></div><div class="mdesc">(3 jaja, paprika, pečurke, sir)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="1" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/govedja-supa-sa-rezancima.jpg" alt="Goveđa supa sa rezancima" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Goveđa supa sa rezancima</span><span class="mdots"></span><span class="mprice">320 din</span></div><div class="mdesc">(domaći rezanci, sveže povrće)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pileca-supa.jpg" alt="Pileća supa" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Pileća supa</span><span class="mdots"></span><span class="mprice">300 din</span></div><div class="mdesc">(pileće belo meso, koren)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/krem-supa-od-pecurki.jpg" alt="Krem supa od pečurki" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Krem supa od pečurki</span><span class="mdots"></span><span class="mprice">360 din</span></div><div class="mdesc">(šampinjoni, pavlaka, krutoni)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="2" style="display:block;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/sarma-sa-domacim-kupusom.jpg" alt="Sarma sa domaćim kupusom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Sarma sa domaćim kupusom</span><span class="mdots"></span><span class="mprice">690 din</span></div><div class="mdesc">(2 sarme, mleveno meso, dimljeno rebro)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pasulj-sa-rebrima.jpg" alt="Pasulj sa rebrima" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Pasulj sa rebrima</span><span class="mdots"></span><span class="mprice">620 din</span></div><div class="mdesc">(prebranac, dimljena rebra, luk)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/musaka-od-krompira.jpg" alt="Musaka od krompira" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Musaka od krompira</span><span class="mdots"></span><span class="mprice">650 din</span></div><div class="mdesc">(krompir, mleveno meso, jaja)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/punjene-paprike.jpg" alt="Punjene paprike" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Punjene paprike</span><span class="mdots"></span><span class="mprice">660 din</span></div><div class="mdesc">(2 paprike, meso, pirinač, sos)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="3" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/becka-snicla.jpg" alt="Bečka šnicla" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Bečka šnicla</span><span class="mdots"></span><span class="mprice">780 din</span></div><div class="mdesc">(180g svinjski but, prilog po izboru)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pohovani-sir.jpg" alt="Pohovani sir" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Pohovani sir</span><span class="mdots"></span><span class="mprice">590 din</span></div><div class="mdesc">(150g gauda, tartar sos)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pileci-medaljoni.jpg" alt="Pileći medaljoni" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Pileći medaljoni</span><span class="mdots"></span><span class="mprice">720 din</span></div><div class="mdesc">(160g pileće belo, prezle)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="4" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/kuhinjica-sendvic.jpg" alt="Kuhinjica sendvič" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Kuhinjica sendvič</span><span class="mdots"></span><span class="mprice">560 din</span></div><div class="mdesc">(pljeskavica, kajmak, ajvar, salata)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pileci-sendvic.jpg" alt="Pileći sendvič" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Pileći sendvič</span><span class="mdots"></span><span class="mprice">540 din</span></div><div class="mdesc">(grilovano pile, sir, sos)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/vegetarijanski.jpg" alt="Vegetarijanski" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Vegetarijanski</span><span class="mdots"></span><span class="mprice">480 din</span></div><div class="mdesc">(grilovano povrće, sir, namaz)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="5" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/mesano-meso.jpg" alt="Mešano meso" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Mešano meso</span><span class="mdots"></span><span class="mprice">990 din</span></div><div class="mdesc">(ćevapi, vešalica, batak, kobasica)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/cevapi-10-kom.jpg" alt="Ćevapi (10 kom)" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Ćevapi (10 kom)</span><span class="mdots"></span><span class="mprice">640 din</span></div><div class="mdesc">(junetina, lepinja, luk, kajmak)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/vesalica.jpg" alt="Vešalica" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Vešalica</span><span class="mdots"></span><span class="mprice">820 din</span></div><div class="mdesc">(200g svinjski vrat, prilog)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="6" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/njoke-cetiri-sira.jpg" alt="Njoke četiri sira" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Njoke četiri sira</span><span class="mdots"></span><span class="mprice">690 din</span></div><div class="mdesc">(gorgonzola, parmezan, gauda, edamer)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/rizoto-sa-pecurkama.jpg" alt="Rižoto sa pečurkama" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Rižoto sa pečurkama</span><span class="mdots"></span><span class="mprice">640 din</span></div><div class="mdesc">(arborio pirinač, šampinjoni, parmezan)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pasta-carbonara.jpg" alt="Pasta carbonara" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Pasta carbonara</span><span class="mdots"></span><span class="mprice">660 din</span></div><div class="mdesc">(pančeta, jaje, parmezan, biber)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="7" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/tortilja-sa-piletinom.jpg" alt="Tortilja sa piletinom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Tortilja sa piletinom</span><span class="mdots"></span><span class="mprice">590 din</span></div><div class="mdesc">(grilovano pile, povrće, sos)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/tortilja-sa-junetinom.jpg" alt="Tortilja sa junetinom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Tortilja sa junetinom</span><span class="mdots"></span><span class="mprice">640 din</span></div><div class="mdesc">(junetina, kukuruz, salata)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/vegetarijanska-tortilja.jpg" alt="Vegetarijanska tortilja" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Vegetarijanska tortilja</span><span class="mdots"></span><span class="mprice">540 din</span></div><div class="mdesc">(povrće, pasulj, sir)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="8" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/blitva-sa-krompirom.jpg" alt="Blitva sa krompirom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Blitva sa krompirom</span><span class="mdots"></span><span class="mprice">380 din</span></div><div class="mdesc">(sveža blitva, krompir, beli luk)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/grilovano-povrce.jpg" alt="Grilovano povrće" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Grilovano povrće</span><span class="mdots"></span><span class="mprice">420 din</span></div><div class="mdesc">(tikvice, paprika, patlidžan)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/domaci-pomfrit.jpg" alt="Domaći pomfrit" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Domaći pomfrit</span><span class="mdots"></span><span class="mprice">300 din</span></div><div class="mdesc">(sveže sečen krompir)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="9" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/sopska-salata.jpg" alt="Šopska salata" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Šopska salata</span><span class="mdots"></span><span class="mprice">360 din</span></div><div class="mdesc">(paradajz, krastavac, sir)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/cezar-salata.jpg" alt="Cezar salata" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Cezar salata</span><span class="mdots"></span><span class="mprice">590 din</span></div><div class="mdesc">(pile, krutoni, parmezan, cezar sos)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/obrok-salata-sa-piletinom.jpg" alt="Obrok salata sa piletinom" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Obrok salata sa piletinom</span><span class="mdots"></span><span class="mprice">620 din</span></div><div class="mdesc">(mix salata, pile, jaje, seme)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="10" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/domaci-tartar-sos.jpg" alt="Domaći tartar sos" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Domaći tartar sos</span><span class="mdots"></span><span class="mprice">120 din</span></div><div class="mdesc">(majonez, kiseli krastavci, začini)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/ajvar.jpg" alt="Ajvar" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Ajvar</span><span class="mdots"></span><span class="mprice">150 din</span></div><div class="mdesc">(pečena paprika, domaći)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/kajmak.jpg" alt="Kajmak" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Kajmak</span><span class="mdots"></span><span class="mprice">180 din</span></div><div class="mdesc">(domaći, mladi)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="11" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/baklava.jpg" alt="Baklava" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Baklava</span><span class="mdots"></span><span class="mprice">320 din</span></div><div class="mdesc">(orasi, kore, med)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/palacinke-2-kom.jpg" alt="Palačinke (2 kom)" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Palačinke (2 kom)</span><span class="mdots"></span><span class="mprice">340 din</span></div><div class="mdesc">(nutela, plazma, orasi ili džem)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/krempita.jpg" alt="Krempita" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Krempita</span><span class="mdots"></span><span class="mprice">300 din</span></div><div class="mdesc">(vanila krema, lisnato testo)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="12" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/domaci-hleb.jpg" alt="Domaći hleb" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Domaći hleb</span><span class="mdots"></span><span class="mprice">90 din</span></div><div class="mdesc">(pečen istog dana)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/pogaca.jpg" alt="Pogača" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Pogača</span><span class="mdots"></span><span class="mprice">120 din</span></div><div class="mdesc">(mekana, sa susamom)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/lepinja.jpg" alt="Lepinja" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Lepinja</span><span class="mdots"></span><span class="mprice">80 din</span></div><div class="mdesc">(sa roštilja)</div></div></div>
-          </div>
-        <div class="menu-cols" data-r="menu-cols" data-panel="13" style="display:none;">
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/domaci-sok-od-zove.jpg" alt="Domaći sok od zove" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Domaći sok od zove</span><span class="mdots"></span><span class="mprice">220 din</span></div><div class="mdesc">(prirodni, bez aditiva)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/limunada.jpg" alt="Limunada" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Limunada</span><span class="mdots"></span><span class="mprice">260 din</span></div><div class="mdesc">(sveži limun, nana)</div></div></div>
-            <div class="mitem"><div class="mthumb ph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><img src="assets/meni/cedjena-pomorandza.jpg" alt="Ceđena pomorandža" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></div><div class="mbody"><div class="mrow"><span class="mname">Ceđena pomorandža</span><span class="mdots"></span><span class="mprice">320 din</span></div><div class="mdesc">(0.3l, sveže ceđena)</div></div></div>
-          </div>
-      </div>
+    <div class="marquee-wrap" style="overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);">
+      <div class="marquee-track" style="padding-left:56px;"><div style="flex:0 0 min(380px,86vw);width:min(380px,86vw);margin-right:24px;background:#1b1c13;border:2px solid rgba(236,233,219,0.14);border-radius:14px;overflow:hidden;">
+              <div style="position:relative;width:100%;aspect-ratio:16/10;background:#22241a;"><img src="assets/meni/krem-supa-od-pecurki.jpg" alt="Krem supa od pečurki" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+              <div style="padding:22px 24px 26px;">
+                <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#94a459;font-weight:800;margin-bottom:10px;">Predjelo</div>
+                <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px;"><span style="font-weight:800;font-size:21px;color:#ece9db;">Krem supa od pečurki</span><span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span><span style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">360 din</span></div>
+                <div style="font-size:14px;color:#b9b6a5;line-height:1.55;">Šampinjoni, pavlaka, krutoni — topla i kremasta.</div>
+              </div>
+            </div><div style="flex:0 0 min(380px,86vw);width:min(380px,86vw);margin-right:24px;background:#1b1c13;border:2px solid rgba(236,233,219,0.14);border-radius:14px;overflow:hidden;">
+              <div style="position:relative;width:100%;aspect-ratio:16/10;background:#22241a;"><img src="assets/meni/sarma-sa-domacim-kupusom.jpg" alt="Sarma" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+              <div style="padding:22px 24px 26px;">
+                <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#94a459;font-weight:800;margin-bottom:10px;">Glavno jelo</div>
+                <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px;"><span style="font-weight:800;font-size:21px;color:#ece9db;">Sarma</span><span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span><span style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">690 din</span></div>
+                <div style="font-size:14px;color:#b9b6a5;line-height:1.55;">Kiseli kupus, mleveno meso i dimljeno rebro — krčkano satima.</div>
+              </div>
+            </div><div style="flex:0 0 min(380px,86vw);width:min(380px,86vw);margin-right:24px;background:#1b1c13;border:2px solid rgba(236,233,219,0.14);border-radius:14px;overflow:hidden;">
+              <div style="position:relative;width:100%;aspect-ratio:16/10;background:#22241a;"><img src="assets/meni/baklava.jpg" alt="Baklava" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+              <div style="padding:22px 24px 26px;">
+                <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#94a459;font-weight:800;margin-bottom:10px;">Desert</div>
+                <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px;"><span style="font-weight:800;font-size:21px;color:#ece9db;">Baklava</span><span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span><span style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">320 din</span></div>
+                <div style="font-size:14px;color:#b9b6a5;line-height:1.55;">Hrskave kore, orasi i med — pečena istog dana.</div>
+              </div>
+            </div><div style="flex:0 0 min(380px,86vw);width:min(380px,86vw);margin-right:24px;background:#1b1c13;border:2px solid rgba(236,233,219,0.14);border-radius:14px;overflow:hidden;">
+              <div style="position:relative;width:100%;aspect-ratio:16/10;background:#22241a;"><img src="assets/meni/krem-supa-od-pecurki.jpg" alt="Krem supa od pečurki" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+              <div style="padding:22px 24px 26px;">
+                <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#94a459;font-weight:800;margin-bottom:10px;">Predjelo</div>
+                <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px;"><span style="font-weight:800;font-size:21px;color:#ece9db;">Krem supa od pečurki</span><span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span><span style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">360 din</span></div>
+                <div style="font-size:14px;color:#b9b6a5;line-height:1.55;">Šampinjoni, pavlaka, krutoni — topla i kremasta.</div>
+              </div>
+            </div><div style="flex:0 0 min(380px,86vw);width:min(380px,86vw);margin-right:24px;background:#1b1c13;border:2px solid rgba(236,233,219,0.14);border-radius:14px;overflow:hidden;">
+              <div style="position:relative;width:100%;aspect-ratio:16/10;background:#22241a;"><img src="assets/meni/sarma-sa-domacim-kupusom.jpg" alt="Sarma" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+              <div style="padding:22px 24px 26px;">
+                <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#94a459;font-weight:800;margin-bottom:10px;">Glavno jelo</div>
+                <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px;"><span style="font-weight:800;font-size:21px;color:#ece9db;">Sarma</span><span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span><span style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">690 din</span></div>
+                <div style="font-size:14px;color:#b9b6a5;line-height:1.55;">Kiseli kupus, mleveno meso i dimljeno rebro — krčkano satima.</div>
+              </div>
+            </div><div style="flex:0 0 min(380px,86vw);width:min(380px,86vw);margin-right:24px;background:#1b1c13;border:2px solid rgba(236,233,219,0.14);border-radius:14px;overflow:hidden;">
+              <div style="position:relative;width:100%;aspect-ratio:16/10;background:#22241a;"><img src="assets/meni/baklava.jpg" alt="Baklava" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+              <div style="padding:22px 24px 26px;">
+                <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#94a459;font-weight:800;margin-bottom:10px;">Desert</div>
+                <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px;"><span style="font-weight:800;font-size:21px;color:#ece9db;">Baklava</span><span style="flex:1;border-bottom:2px dotted rgba(236,233,219,0.22);transform:translateY(-5px);"></span><span style="font-weight:800;font-size:16px;color:#e9c24a;white-space:nowrap;">320 din</span></div>
+                <div style="font-size:14px;color:#b9b6a5;line-height:1.55;">Hrskave kore, orasi i med — pečena istog dana.</div>
+              </div>
+            </div></div>
     </div>
   </section>
 
@@ -224,7 +220,10 @@
           <div><div style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#9b9a86;font-weight:700;margin-bottom:6px;">Radno vreme</div><div style="font-size:17px;font-weight:600;">Pon–Ned · 08–22h</div></div>
         </div>
       </div>
-      <a href="https://www.google.com/maps/search/kuhinjica+subotica" target="_blank" rel="noopener" style="display:block;position:relative;height:300px;border:2px solid rgba(236,233,219,0.14);overflow:hidden;"><img src="assets/map.webp" alt="Mapa lokacije — Lajoša Joa 46, Subotica" style="width:100%;height:100%;object-fit:cover;display:block;"></a>
+      <div style="position:relative;height:300px;border:2px solid rgba(236,233,219,0.14);overflow:hidden;">
+        <iframe title="Mapa — Kuhinjica, Lajoša Joa 46, Subotica" src="https://www.google.com/maps?q=Laj%C5%A1a%20Joa%2046%2C%20Subotica&output=embed" style="width:100%;height:100%;border:0;display:block;filter:grayscale(0.15);" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+        <a href="https://www.google.com/maps/search/Laj%C5%A1a+Joa+46,+Subotica" target="_blank" rel="noopener" style="position:absolute;right:14px;bottom:14px;z-index:5;display:inline-flex;align-items:center;gap:8px;background:#e9c24a;color:#14150e;font-weight:800;font-size:13px;letter-spacing:0.02em;padding:10px 15px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.4);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Otvori u Google Mapama</a>
+      </div>
     </div>
   </section>
 
@@ -245,7 +244,6 @@
     <div style="grid-column:1 / -1;border-top:2px solid rgba(236,233,219,0.14);padding-top:22px;font-size:13px;color:#6f6e5f;">© 2026 Kuhinjica · Sva prava zadržana</div>
   </footer>
 
-  <button type="button" id="to-top" class="to-top" aria-label="Nazad na vrh" title="Nazad na vrh"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="m5 12 7-7 7 7"></path></svg></button>
 </div>
 
 <script>
@@ -319,6 +317,101 @@
     r.onload=function(){ try{ localStorage.setItem(PREFIX+current.key, r.result); }catch(e){ alert('Slika je prevelika za čuvanje u browseru.'); } current.img.src=r.result; current.img.style.display=''; };
     r.readAsDataURL(input.files[0]);
   });
+})();
+</script>
+<script>
+// ===== KORPA ZA PORUČIVANJE =====
+(function(){
+  var KEY='kuhinjica-korpa';
+  var WEB3FORMS_KEY='PASTE-ACCESS-KEY-OVDE';
+  var cart={};
+  try{ cart=JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ cart={}; }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(cart)); }catch(e){} }
+  function priceNum(s){ var m=(s||'').replace(/\./g,'').match(/\d+/); return m?parseInt(m[0],10):0; }
+  function fmt(n){ return n.toLocaleString('sr-RS')+' din'; }
+
+  // build panel
+  var bd=document.createElement('div'); bd.id='cart-backdrop';
+  var panel=document.createElement('div'); panel.id='cart-panel';
+  panel.innerHTML='<div class="cart-head"><h3>Vaša korpa</h3><button class="cart-close" aria-label="Zatvori"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div><div class="cart-items" id="cart-items"></div><div class="cart-foot" id="cart-foot"></div>';
+  document.body.appendChild(bd); document.body.appendChild(panel);
+  var itemsEl=panel.querySelector('#cart-items');
+  var footEl=panel.querySelector('#cart-foot');
+
+  function count(){ var c=0; for(var k in cart) c+=cart[k].qty; return c; }
+  function total(){ var t=0; for(var k in cart) t+=cart[k].qty*cart[k].price; return t; }
+
+  function open(){ bd.classList.add('open'); panel.classList.add('open'); document.body.style.overflow='hidden'; render(); }
+  function close(){ bd.classList.remove('open'); panel.classList.remove('open'); document.body.style.overflow=''; }
+  bd.addEventListener('click', close);
+  panel.querySelector('.cart-close').addEventListener('click', close);
+
+  function badge(){
+    var b=document.getElementById('cart-badge'); if(!b) return;
+    var c=count(); b.textContent=c; b.classList.toggle('show', c>0);
+  }
+
+  function render(){
+    var keys=Object.keys(cart);
+    if(!keys.length){
+      itemsEl.innerHTML='<div class="cart-empty">Vaša korpa je prazna.<br>Dodajte jela iz menija i poručite dostavu.</div>';
+      footEl.innerHTML='';
+      return;
+    }
+    itemsEl.innerHTML=keys.map(function(k){
+      var it=cart[k];
+      return '<div class="citem" data-k="'+k+'"><div><div class="citem-name">'+it.name+'</div><div class="citem-unit">'+fmt(it.price)+' / kom</div><div class="qty"><button data-act="dec">−</button><span>'+it.qty+'</span><button data-act="inc">+</button></div></div><div class="citem-right"><div class="citem-sum">'+fmt(it.price*it.qty)+'</div></div></div>';
+    }).join('');
+    footEl.innerHTML='<div class="cart-total"><span class="lbl">Ukupno</span><span class="val">'+fmt(total())+'</span></div>'+
+      '<form id="cart-form"><input required name="ime" placeholder="Ime i prezime"><input required name="tel" placeholder="Telefon"><input required type="email" name="email" placeholder="Vaš e-mail (za potvrdu)"><textarea required name="adr" rows="2" placeholder="Adresa za dostavu"></textarea><button type="submit" class="cart-order">Poruči — '+fmt(total())+'</button></form>';
+    var form=footEl.querySelector('#cart-form');
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var btn=form.querySelector('.cart-order');
+      var lines=Object.keys(cart).map(function(k){ var it=cart[k]; return it.qty+' x '+it.name+' — '+fmt(it.price*it.qty); }).join('\n');
+      var msg='NOVA PORUDŽBINA — Kuhinjica\n\nKupac: '+form.ime.value+'\nTelefon: '+form.tel.value+'\nE-mail: '+form.email.value+'\nAdresa za dostavu: '+form.adr.value+'\n\nStavke:\n'+lines+'\n\nUKUPNO: '+fmt(total());
+      btn.disabled=true; btn.textContent='Slanje...';
+      fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:WEB3FORMS_KEY,subject:'Nova porudžbina — Kuhinjica',from_name:'Kuhinjica — online porudžbina',name:form.ime.value,email:form.email.value,replyto:form.email.value,message:msg})})
+      .then(function(r){return r.json();})
+      .then(function(res){ if(!res.success){ throw new Error('fail'); } cart={}; save(); badge(); itemsEl.innerHTML='<div class="cart-ok"><div class="big">✓</div><h4>Porudžbina poslata!</h4><p>Potvrdu smo poslali na vaš e-mail. Restoran je obavešten i uskoro vas zovemo radi potvrde dostave.</p></div>'; footEl.innerHTML=''; })
+      .catch(function(){ btn.disabled=false; btn.textContent='Pokušaj ponovo'; alert('Slanje nije uspelo. Proverite internet ili nas pozovite: 066 166 122'); });
+    });
+  }
+
+  itemsEl.addEventListener('click', function(e){
+    var btn=e.target.closest('button[data-act]'); if(!btn) return;
+    var row=e.target.closest('.citem'); var k=row.dataset.k; if(!cart[k]) return;
+    if(btn.dataset.act==='inc') cart[k].qty++;
+    else { cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; }
+    save(); badge(); render();
+  });
+
+  // add-to-cart buttons on each menu item
+  document.querySelectorAll('#panels .mitem').forEach(function(item){
+    var nameEl=item.querySelector('.mname'), priceEl=item.querySelector('.mprice');
+    if(!nameEl||!priceEl) return;
+    var name=nameEl.textContent.trim(), price=priceNum(priceEl.textContent);
+    var key=name.toLowerCase();
+    var btn=document.createElement('button');
+    btn.type='button'; btn.className='add-cart';
+    btn.title='Dodaj u korpu'; btn.setAttribute('aria-label','Dodaj u korpu');
+    btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>';
+    btn.addEventListener('click', function(){
+      if(!cart[key]) cart[key]={name:name, price:price, qty:0};
+      cart[key].qty++; save(); badge();
+      btn.classList.add('added');
+      setTimeout(function(){ btn.classList.remove('added'); }, 700);
+    });
+    item.querySelector('.mbody').appendChild(btn);
+  });
+
+  // nav cart button
+  var cartBtn=document.getElementById('cart-btn');
+  if(cartBtn){
+    var badgeEl=document.createElement('span'); badgeEl.id='cart-badge'; cartBtn.appendChild(badgeEl);
+    cartBtn.addEventListener('click', function(e){ e.preventDefault(); open(); });
+  }
+  badge();
 })();
 </script>
 </body>
